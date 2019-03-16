@@ -7,7 +7,6 @@ import time
 import tempfile
 import numpy as np
 import tensorflow as tf
-from tensorflow import keras
 
 # Enable Eager execution
 tf.enable_eager_execution()

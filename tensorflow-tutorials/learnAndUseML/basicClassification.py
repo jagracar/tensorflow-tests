@@ -12,7 +12,7 @@ from utils import plotUtils
 # Load the fashion MNIST data set
 (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
 
-# Inspect the data set
+# Inspect the train data set
 print("Train images shape:", train_images.shape)
 print("Train labels shape:", train_labels.shape)
 print("Possible label values:", np.unique(train_labels))
@@ -27,7 +27,7 @@ test_classes = class_names[test_labels]
 # Plot the first image
 plotUtils.plot_image(train_images[0], train_classes[0])
 
-# Change the images to take values between 0 and 1 
+# Scale the images to take values between 0 and 1
 train_images = train_images / 255
 test_images = test_images / 255
 
@@ -53,7 +53,7 @@ model.compile(optimizer="adam",
 model.fit(train_images, train_labels, epochs=10)
 
 # Evaluate the model using the test data set
-test_loss, test_accuracy = model.evaluate(test_images, test_labels)
+test_loss, test_accuracy = model.evaluate(test_images, test_labels, verbose=2)
 print("Test accuracy:", test_accuracy)
 
 # Predict the labels of the test images
@@ -63,3 +63,6 @@ print("Predictions shape:", predictions.shape)
 # Plot the prediction for the first test image
 index = 0
 plotUtils.plot_prediction(predictions[index], test_images[index], test_classes[index], class_names)
+
+# Plot the prediction for the first 15 images
+plotUtils.plot_predictions(predictions, test_images, test_classes, class_names, rows=5, columns=3)

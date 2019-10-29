@@ -50,7 +50,10 @@ model.compile(optimizer="adam",
               metrics=["accuracy"])
 
 # Train the model using the train data set
-model.fit(train_images, train_labels, epochs=10)
+history = model.fit(train_images, train_labels, epochs=10)
+
+# Plot the training history
+plotUtils.plot_training_history(history)
 
 # Evaluate the model using the test data set
 test_loss, test_accuracy = model.evaluate(test_images, test_labels, verbose=2)
@@ -64,5 +67,11 @@ print("Predictions shape:", predictions.shape)
 index = 0
 plotUtils.plot_prediction(predictions[index], test_images[index], test_classes[index], class_names)
 
-# Plot the prediction for the first 15 images
+# Plot the predictions for the first 15 images
 plotUtils.plot_predictions(predictions, test_images, test_classes, class_names, rows=5, columns=3)
+
+# Plot 15 examples of wrong predictions
+predicted_labels = np.argmax(predictions, axis=1)
+wrong_prediction = predicted_labels != test_labels
+plotUtils.plot_predictions(predictions[wrong_prediction], test_images[wrong_prediction],
+                           test_classes[wrong_prediction], class_names, rows=5, columns=3)

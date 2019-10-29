@@ -1,12 +1,70 @@
 """
 Some utility methods to plot input data sets and ML results.
 
+Based on some of the TensorFlow tutorials:
+https://www.tensorflow.org/tutorials
+
 Created on: 10/05/19
 Author: Javier Gracia Carpio (jagracar@gmail.com)
 """
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+
+
+def create_multipanel_figure(rows, columns, panel_width, panel_height,
+                             panel_separation, margins):
+    """Creates a multi-panel figure.
+
+    Parameters
+    ----------
+    rows: int
+        The number of panel rows.
+    columns: int
+        The number of panel columns.
+    panel_width: float
+        The panel width.
+    panel_height: float
+        The panel height.
+    panel_separation: float
+        The separation between panels.
+    margins: list
+        A python list with the margin sizes in the following sequence: left,
+        top, right, bottom.
+
+    Returns
+    -------
+    tuple
+        A python tuple with the figure and the panels axes list.
+
+    """
+    # Extract the margins information
+    left_margin = margins[0]
+    top_margin = margins[1]
+    right_margin = margins[2]
+    bottom_margin = margins[3]
+
+    # Calculate the figure dimensions
+    figure_width = (left_margin + columns * panel_width + 
+                    (columns - 1) * panel_separation + right_margin)
+    figure_height = (bottom_margin + rows * panel_height + 
+                     (rows - 1) * panel_separation + top_margin)
+    figure_size = (figure_width, figure_height)
+
+    # Initialize the figure
+    fig, axes_list = plt.subplots(rows, columns, figsize=figure_size)
+
+    # Set the subplot layout
+    plt.subplots_adjust(
+        left=left_margin / figure_width,
+        right=(figure_width - right_margin) / figure_width,
+        bottom=bottom_margin / figure_height,
+        top=(figure_height - top_margin) / figure_height,
+        wspace=panel_separation / panel_width,
+        hspace=panel_separation / panel_height)
+
+    return fig, axes_list
 
 
 def plot_image(image, image_class):
@@ -24,11 +82,11 @@ def plot_image(image, image_class):
     color_map = plt.get_cmap("binary")
 
     # Plot the image
-    plt.figure()
+    fig = plt.figure()
     plt.imshow(image, cmap=color_map)
     plt.title(image_class)
     plt.colorbar()
-    plt.show(block=False)
+    fig.show()
 
 
 def plot_images(images, image_classes, rows=5, columns=5):
@@ -39,7 +97,7 @@ def plot_images(images, image_classes, rows=5, columns=5):
     images: object
         A 3D numpy array with the images pixel values.
     image_classes: object
-        A numpy array with the images class names.
+        A numpy array with the images classes.
     rows: int, optional
         The number of image rows in the plot. The total number of images
         displayed is rows * columns. Default is 5.
@@ -51,41 +109,23 @@ def plot_images(images, image_classes, rows=5, columns=5):
     # Choose the color map to use
     color_map = plt.get_cmap("binary")
 
-    # Set the figure dimensions
-    image_box_size = 1.2
-    image_separation = 0.3
-    margin_left = 0.2
-    margin_right = 0.2
-    margin_bottom = 0.2
-    margin_top = 0.4
-    figure_width = (margin_left + columns * image_box_size + 
-                    (columns - 1) * image_separation + margin_right)
-    figure_height = (margin_bottom + rows * image_box_size + 
-                     (rows - 1) * image_separation + margin_top)
-    figure_size = (figure_width, figure_height)
-
-    # Initialize the figure
-    _, ax_list = plt.subplots(rows, columns, figsize=figure_size)
-
-    # Set the subplot layout
-    plt.subplots_adjust(
-        left=margin_left / figure_width,
-        right=(figure_width - margin_right) / figure_width,
-        bottom=margin_bottom / figure_height,
-        top=(figure_height - margin_top) / figure_height,
-        wspace=image_separation / image_box_size,
-        hspace=image_separation / image_box_size)
+    # Create the multi-panel figure
+    fig, axes_list = create_multipanel_figure(rows, columns,
+                                              panel_width=1.2,
+                                              panel_height=1.2,
+                                              panel_separation=0.3,
+                                              margins=[0.2, 0.4, 0.2, 0.2])
 
     # Add the images to the figure
-    for i, ax in enumerate(ax_list.ravel()):
+    for i, axes in enumerate(axes_list.ravel()):
         if i < len(images):
             # Display the image
-            ax.imshow(images[i], cmap=color_map)
-            ax.set_xticks([])
-            ax.set_yticks([])
-            ax.set_title(image_classes[i], fontsize=8)
+            axes.imshow(images[i], cmap=color_map)
+            axes.set_xticks([])
+            axes.set_yticks([])
+            axes.set_title(image_classes[i], fontsize=8)
 
-    plt.show(block=False)
+    fig.show()
 
 
 def plot_prediction(prediction, image, image_class, class_names):
@@ -98,7 +138,7 @@ def plot_prediction(prediction, image, image_class, class_names):
     image: object
         A 2D numpy array with the image pixel values.
     image_class: str
-        The image class name.
+        The image class.
     class_names: object
         A numpy array will all the possible class names.
 
@@ -115,47 +155,47 @@ def plot_prediction(prediction, image, image_class, class_names):
     image_box_size = 3
     histogram_width = 4.5
     image_separation = 0.1
-    margin_left = 0.2
-    margin_right = 0.2
-    margin_bottom = 0.8
-    margin_top = 0.4
-    figure_width = (margin_left + image_box_size + image_separation + 
-                    histogram_width + margin_right)
-    figure_height = (margin_bottom + image_box_size + margin_top)
+    left_margin = 0.2
+    right_margin = 0.2
+    bottom_margin = 0.8
+    top_margin = 0.4
+    figure_width = (left_margin + image_box_size + image_separation + 
+                    histogram_width + right_margin)
+    figure_height = (bottom_margin + image_box_size + top_margin)
     figure_size = (figure_width, figure_height)
 
     # Initialize the figure
-    plt.figure(figsize=figure_size)
+    fig = plt.figure(figsize=figure_size)
 
     # Add the image
-    ax_0 = plt.axes([margin_left / figure_width,
-                     margin_bottom / figure_height,
-                     image_box_size / figure_width,
-                     image_box_size / figure_height])
-    ax_0.imshow(image, cmap=color_map)
-    ax_0.set_xticks([])
-    ax_0.set_yticks([])
-    ax_0.set_title("%s %.0f%% (%s)" % (predicted_class, percentage, image_class))
+    axes_0 = plt.axes([left_margin / figure_width,
+                       bottom_margin / figure_height,
+                       image_box_size / figure_width,
+                       image_box_size / figure_height])
+    axes_0.imshow(image, cmap=color_map)
+    axes_0.set_xticks([])
+    axes_0.set_yticks([])
+    axes_0.set_title("%s %.0f%% (%s)" % (predicted_class, percentage, image_class))
 
     # Get the true image label
     image_label = np.where(class_names == image_class)[0][0]
 
     # Add the histogram
-    ax_1 = plt.axes([(margin_left + image_box_size + image_separation) / figure_width,
-                     margin_bottom / figure_height,
-                     histogram_width / figure_width,
-                     image_box_size / figure_height])
+    axes_1 = plt.axes([(left_margin + image_box_size + image_separation) / figure_width,
+                       bottom_margin / figure_height,
+                       histogram_width / figure_width,
+                       image_box_size / figure_height])
     x_ticks = np.arange(len(class_names))
-    bars = ax_1.bar(x_ticks, prediction, color="grey")
+    bars = axes_1.bar(x_ticks, prediction, color="grey")
     bars[predicted_label].set_color("red")
     bars[image_label].set_color("blue")
-    ax_1.set_xticks(x_ticks)
-    ax_1.set_xticklabels(class_names, rotation=45)
-    ax_1.set_ylim([0, 1])
-    ax_1.set_yticks([])
-    ax_1.set_title("Model predictions")
+    axes_1.set_xticks(x_ticks)
+    axes_1.set_xticklabels(class_names, rotation=45)
+    axes_1.set_ylim([0, 1])
+    axes_1.set_yticks([])
+    axes_1.set_title("Model predictions")
 
-    plt.show(block=False)
+    fig.show()
 
 
 def plot_predictions(predictions, images, image_classes, class_names, rows=5, columns=3):
@@ -168,7 +208,7 @@ def plot_predictions(predictions, images, image_classes, class_names, rows=5, co
     images: object
         A 3D numpy array with the images pixel values.
     image_classes: object
-        A numpy array with the images class names.
+        A numpy array with the images classes.
     class_names: object
         A numpy array will all the possible class names.
     rows: int, optional
@@ -187,43 +227,25 @@ def plot_predictions(predictions, images, image_classes, class_names, rows=5, co
     # Choose the color map to use
     color_map = plt.get_cmap("binary")
 
-    # Set the figure dimensions
-    image_box_size = 1.2
-    image_separation = 0.3
-    margin_left = 0.2
-    margin_right = 0.2
-    margin_bottom = 0.2
-    margin_top = 0.4
-    figure_width = (margin_left + 2 * columns * image_box_size + 
-                    (2 * columns - 1) * image_separation + margin_right)
-    figure_height = (margin_bottom + rows * image_box_size + 
-                     (rows - 1) * image_separation + margin_top)
-    figure_size = (figure_width, figure_height)
+    # Create the multi-panel figure
+    fig, axes_list = create_multipanel_figure(rows, 2 * columns,
+                                              panel_width=1.2,
+                                              panel_height=1.2,
+                                              panel_separation=0.3,
+                                              margins=[0.2, 0.4, 0.2, 0.2])
 
-    # Initialize the figure
-    _, ax_list = plt.subplots(rows, 2 * columns, figsize=figure_size)
-
-    # Set the subplot layout
-    plt.subplots_adjust(
-        left=margin_left / figure_width,
-        right=(figure_width - margin_right) / figure_width,
-        bottom=margin_bottom / figure_height,
-        top=(figure_height - margin_top) / figure_height,
-        wspace=image_separation / image_box_size,
-        hspace=image_separation / image_box_size)
-
-    # Add the images to the figure
-    for i, ax in enumerate(ax_list.ravel()):
+    # Add the predictions to the figure
+    for i, axes in enumerate(axes_list.ravel()):
         # Get the image index
         index = i // 2
 
         if index < len(images):
             if i % 2 == 0:
                 # Add the image
-                ax.imshow(images[index], cmap=color_map)
-                ax.set_xticks([])
-                ax.set_yticks([])
-                ax.set_title("%s %.0f%% (%s)" % (
+                axes.imshow(images[index], cmap=color_map)
+                axes.set_xticks([])
+                axes.set_yticks([])
+                axes.set_title("%s %.0f%% (%s)" % (
                     predicted_classes[index], percentages[index], image_classes[index]), fontsize=8)
             else:
                 # Get the true image label
@@ -231,12 +253,73 @@ def plot_predictions(predictions, images, image_classes, class_names, rows=5, co
 
                 # Add the histogram
                 x_ticks = np.arange(len(class_names))
-                bars = ax.bar(x_ticks, predictions[index], color="grey")
+                bars = axes.bar(x_ticks, predictions[index], color="grey")
                 bars[predicted_labels[index]].set_color("red")
                 bars[image_label].set_color("blue")
-                ax.set_xticks(x_ticks)
-                ax.set_xticklabels(x_ticks, fontdict={"fontsize" : 8})
-                ax.set_ylim([0, 1])
-                ax.set_yticks([])
+                axes.set_xticks(x_ticks)
+                axes.set_xticklabels(x_ticks, fontdict={"fontsize" : 8})
+                axes.set_ylim([0, 1])
+                axes.set_yticks([])
 
-    plt.show(block=False)
+    fig.show()
+
+
+def plot_training_history(training_history):
+    """Plots the model training history.
+
+    Parameters
+    ----------
+    training_history: object
+        The model training history returned by Keras model.fit().
+
+    """
+    # Create a Pandas data frame with the training history
+    history = pd.DataFrame(training_history.history)
+
+    # Get the metrics to plot
+    metrics = [column for column in history if not column.startswith("val_")]
+
+    # Create the multi-panel figure
+    fig, axes_list = create_multipanel_figure(len(metrics), 1,
+                                              panel_width=6,
+                                              panel_height=2.5,
+                                              panel_separation=0.4,
+                                              margins=[0.6, 0.4, 0.2, 0.5])
+
+    # Add all the metric histories to the figure
+    epoch = training_history.epoch
+
+    for i, axes in enumerate(axes_list.ravel()):
+        # Plot the metric history
+        y = history[metrics[i]]
+        axes.plot(epoch, y, label="Training set")
+        axes.set_ylabel(metrics[i].replace("_", " ").title())
+
+        # Calculate the y axis maximum and minimum values
+        y_std = y[len(y) // 5:].std()
+        min_value = max(0, y.min() - y_std)
+        max_value = min(y.median() + 10 * y_std, y.max() + 3 * y_std)
+        axes.set_ylim([min_value, max_value])        
+
+        # Check if the metric validation history is available
+        metric_validation = "val_" + metrics[i]
+
+        if metric_validation in history:
+            # Plot the validation metric history
+            y = history[metric_validation]
+            axes.plot(epoch, y, label="Validation set")
+
+            # Add the legend
+            axes.legend(loc="upper right")
+
+            # Update the plot maximum and minimum values
+            y_std = y[len(y) // 5:].std()
+            min_value = min(min_value, max(0, y.min() - y_std))
+            max_value = max(max_value,
+                            min(y.median() + 10 * y_std, y.max() + 3 * y_std))
+            axes.set_ylim([min_value, max_value])
+
+    axes_list[0].set_title("Training history")
+    axes_list[-1].set_xlabel("Epoch")
+
+    fig.show()

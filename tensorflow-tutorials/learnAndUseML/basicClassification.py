@@ -65,13 +65,16 @@ print("Predictions shape:", predictions.shape)
 
 # Plot the prediction for the first test image
 index = 0
-plotUtils.plot_prediction(predictions[index], test_images[index], test_classes[index], class_names)
+plotUtils.plot_image_classification_prediction(
+    predictions[index], test_images[index], test_classes[index], class_names)
 
 # Plot the predictions for the first 15 images
-plotUtils.plot_predictions(predictions, test_images, test_classes, class_names, rows=5, columns=3)
+plotUtils.plot_image_classification_predictions(
+    predictions, test_images, test_classes, class_names, rows=5, columns=3)
 
 # Plot 15 examples of wrong predictions
 predicted_labels = np.argmax(predictions, axis=1)
 wrong_prediction = predicted_labels != test_labels
-plotUtils.plot_predictions(predictions[wrong_prediction], test_images[wrong_prediction],
-                           test_classes[wrong_prediction], class_names, rows=5, columns=3)
+plotUtils.plot_image_classification_predictions(
+    predictions[wrong_prediction], test_images[wrong_prediction],
+    test_classes[wrong_prediction], class_names, rows=5, columns=3)

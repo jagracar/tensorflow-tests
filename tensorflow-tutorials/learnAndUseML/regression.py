@@ -6,9 +6,9 @@ https://www.tensorflow.org/tutorials/keras/regression
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
-import matplotlib.pyplot as plt
 from utils import plotUtils
 from utils import statsUtils
 
@@ -41,7 +41,7 @@ data["USA"] = np.array(origin == 1, dtype=np.float)
 data["Europe"] = np.array(origin == 2, dtype=np.float)
 data["Japan"] = np.array(origin == 3, dtype=np.float)
 
-# Split the data into a train and a test set
+# Split the data into a train set and a test set
 train_data = data.sample(frac=0.8, random_state=0)
 test_data = data.drop(train_data.index)
 
@@ -57,19 +57,21 @@ test_labels = test_data.pop("MPG")
 columns_statistics = train_data.describe().transpose()
 print(columns_statistics)
 
-# Normalize the data sets
-normalized_train_dataset = statsUtils.normalize_data(train_data, columns_statistics)
-normalized_test_dataset = statsUtils.normalize_data(test_data, columns_statistics)
+# Normalize the data sets to take values mostly between -1 and 1
+normalized_train_data = statsUtils.normalize_data(train_data, columns_statistics)
+normalized_test_data = statsUtils.normalize_data(test_data, columns_statistics)
 
 
-# Define and compile the model
+# Create a function to build the model in one go
 def build_model():
+    # Define the model
     model = keras.Sequential([
         keras.layers.Dense(64, activation=tf.nn.relu, input_shape=[len(train_data.keys())]),
         keras.layers.Dense(64, activation=tf.nn.relu),
         keras.layers.Dense(1)
     ])
 
+    # Compile the model
     model.compile(optimizer=tf.keras.optimizers.RMSprop(0.001),
                   loss="mean_squared_error",
                   metrics=["mean_absolute_error", "mean_squared_error"])
@@ -77,54 +79,37 @@ def build_model():
     return model
 
 
+# Build the model
 model = build_model()
 
 # Print the model summary
 model.summary()
 
-# Train the model
-EPOCHS = 1000
-history = model.fit(normalized_train_dataset, train_labels,
-                    epochs=EPOCHS, validation_split=0.2, verbose=0)
+# Train the model using the normalized train data set
+history = model.fit(normalized_train_data, train_labels, epochs=1000,
+                    validation_split=0.2, verbose=0)
 
 # Plot the training history
 plotUtils.plot_training_history(history)
 
-# Let"s build a new model to stop the training when there is not improvement with the validation data
+# Build the model again
 model = build_model()
 
+# This time we will stop the training when the there is no
+# improvement with the validation data
 early_stop = keras.callbacks.EarlyStopping(monitor="val_loss", patience=10)
-
-history = model.fit(normalized_train_dataset, train_labels, epochs=EPOCHS,
+history = model.fit(normalized_train_data, train_labels, epochs=1000,
                     validation_split=0.2, verbose=0, callbacks=[early_stop])
 
+# Plot the training history
 plotUtils.plot_training_history(history)
 
-# Let's now evaluate the model on the test data
-loss, mae, mse = model.evaluate(normalized_test_dataset, test_labels, verbose=0)
-print("Testing set Mean Abs Error: {:5.2f} MPG".format(mae))
+# Evaluate the model using the normalized test data set
+loss, mae, mse = model.evaluate(normalized_test_data, test_labels, verbose=0)
+print("Test set Mean Absolute Error: %5.2f MPG" % mae)
 
-# Predict the MPG values for the test data
-test_predictions = model.predict(normalized_test_dataset).flatten()
+# Predict the MPG values for the normalized test data set
+test_predictions = model.predict(normalized_test_data).flatten()
 
-# Compare the predictions with the real values
-plt.figure()
-plt.scatter(test_labels, test_predictions)
-plt.xlabel("True Values [MPG]")
-plt.ylabel("Predictions [MPG]")
-plt.axis("equal")
-plt.axis("square")
-plt.xlim([0, plt.xlim()[1]])
-plt.ylim([0, plt.ylim()[1]])
-plt.plot([-100, 100], [-100, 100])
-plt.show(block=False)
-
-# Plot the error distribution
-error = test_predictions - test_labels
-
-plt.figure()
-plt.hist(error, bins=25)
-plt.xlabel("Prediction Error [MPG]")
-plt.ylabel("Count")
-plt.show(block=False)
-
+# Plot the predictions
+plotUtils.plot_regression_predictions(test_predictions, test_labels)

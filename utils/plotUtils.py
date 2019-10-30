@@ -128,7 +128,8 @@ def plot_images(images, image_classes, rows=5, columns=5):
     fig.show()
 
 
-def plot_prediction(prediction, image, image_class, class_names):
+def plot_image_classification_prediction(prediction, image, image_class,
+                                         class_names):
     """Plots the prediction from an image classification model.
 
     Parameters
@@ -198,7 +199,8 @@ def plot_prediction(prediction, image, image_class, class_names):
     fig.show()
 
 
-def plot_predictions(predictions, images, image_classes, class_names, rows=5, columns=3):
+def plot_image_classification_predictions(predictions, images, image_classes,
+                                          class_names, rows=5, columns=3):
     """Plots the predictions from an image classification model.
 
     Parameters
@@ -264,6 +266,44 @@ def plot_predictions(predictions, images, image_classes, class_names, rows=5, co
     fig.show()
 
 
+def plot_regression_predictions(predictions, true_values):
+    """Plots the predictions from a regression model.
+
+    Parameters
+    ----------
+    predictions: object
+        A numpy array with the model predictions.
+    true_values: object
+        A numpy array with the true values.
+
+    """
+    # Create the multi-panel figure
+    fig, axes_list = create_multipanel_figure(1, 2,
+                                              panel_width=4.0,
+                                              panel_height=4.0,
+                                              panel_separation=0.6,
+                                              margins=[0.6, 0.4, 0.2, 0.6])
+
+    # Add the predictions scatter plot
+    axes_list[0].scatter(true_values, predictions)
+    axes_list[0].set_xlabel("True values")
+    axes_list[0].set_ylabel("Predictions")
+
+    # Add a line with slope 1
+    xlim = axes_list[0].get_xlim()
+    ylim = axes_list[0].get_ylim()
+    line_range = [min(xlim[0], ylim[0]), max(xlim[1], ylim[1])]
+    axes_list[0].plot(line_range, line_range, "--k", alpha=0.5, zorder=-1)
+
+    # Add the predictions error histogram
+    axes_list[1].hist(predictions - true_values, bins=25)
+    axes_list[1].set_xlabel("Predictions - True values")
+    axes_list[1].set_ylabel("N")
+
+    fig.suptitle("Model prediction results")
+    fig.show()
+
+
 def plot_training_history(training_history):
     """Plots the model training history.
 
@@ -284,7 +324,7 @@ def plot_training_history(training_history):
                                               panel_width=6,
                                               panel_height=2.5,
                                               panel_separation=0.4,
-                                              margins=[0.6, 0.4, 0.2, 0.5])
+                                              margins=[0.7, 0.4, 0.2, 0.5])
 
     # Add all the metric histories to the figure
     epoch = training_history.epoch

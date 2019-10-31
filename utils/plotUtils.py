@@ -281,7 +281,7 @@ def plot_regression_predictions(predictions, true_values):
     fig, axes_list = create_multipanel_figure(1, 2,
                                               panel_width=4.0,
                                               panel_height=4.0,
-                                              panel_separation=0.6,
+                                              panel_separation=0.7,
                                               margins=[0.6, 0.4, 0.2, 0.6])
 
     # Add the predictions scatter plot
@@ -298,7 +298,7 @@ def plot_regression_predictions(predictions, true_values):
     # Add the predictions error histogram
     axes_list[1].hist(predictions - true_values, bins=25)
     axes_list[1].set_xlabel("Predictions - True values")
-    axes_list[1].set_ylabel("N")
+    axes_list[1].set_ylabel("Counts")
 
     fig.suptitle("Model prediction results")
     fig.show()

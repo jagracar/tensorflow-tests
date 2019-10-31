@@ -11,6 +11,7 @@ import tensorflow as tf
 from tensorflow import keras
 from utils import plotUtils
 from utils import statsUtils
+from utils.callbacks import PrintDot
 
 # Download the Auto MPG data set and save it into a file
 file_name = keras.utils.get_file(
@@ -86,8 +87,10 @@ model = build_model()
 model.summary()
 
 # Train the model using the normalized train data set
-history = model.fit(normalized_train_data, train_labels, epochs=1000,
-                    validation_split=0.2, verbose=0)
+n_epochs = 1000
+history = model.fit(normalized_train_data, train_labels, epochs=n_epochs,
+                    validation_split=0.2, verbose=0,
+                    callbacks=[PrintDot(n_epochs)])
 
 # Plot the training history
 plotUtils.plot_training_history(history)
@@ -98,8 +101,9 @@ model = build_model()
 # This time we will stop the training when the there is no
 # improvement with the validation data
 early_stop = keras.callbacks.EarlyStopping(monitor="val_loss", patience=10)
-history = model.fit(normalized_train_data, train_labels, epochs=1000,
-                    validation_split=0.2, verbose=0, callbacks=[early_stop])
+history = model.fit(normalized_train_data, train_labels, epochs=n_epochs,
+                    validation_split=0.2, verbose=0,
+                    callbacks=[early_stop, PrintDot(n_epochs)])
 
 # Plot the training history
 plotUtils.plot_training_history(history)

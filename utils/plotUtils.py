@@ -327,7 +327,7 @@ def plot_training_history(training_history):
                                               margins=[0.7, 0.4, 0.2, 0.5])
 
     # Add all the metric histories to the figure
-    epoch = training_history.epoch
+    epoch = np.array(training_history.epoch) + 1
 
     for i, axes in enumerate(axes_list.ravel()):
         # Plot the metric history

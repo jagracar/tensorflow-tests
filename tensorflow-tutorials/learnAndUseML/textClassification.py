@@ -1,115 +1,78 @@
 """
 Based on the following tutorial:
-https://www.tensorflow.org/tutorials/keras/basic_text_classification
+https://www.tensorflow.org/tutorials/keras/text_classification
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
+import tensorflow_datasets as tfds
+from utils import plotUtils
 
-# Load the IMDB dataset
-(train_data, train_labels), (test_data, test_labels) = keras.datasets.imdb.load_data(num_words=10000)
+# Load the IMDB data set
+(train_data, test_data), info = tfds.load("imdb_reviews/subwords8k",
+                                          split=(tfds.Split.TRAIN, tfds.Split.TEST),
+                                          as_supervised=True,
+                                          with_info=True)
 
-# Check the dataset shapes
-print(train_data.shape)
-print(train_labels.shape)
+# Get the text encoder and print the number of words in the vocabulary
+encoder = info.features["text"].encoder
+print ("Vocabulary size: %s" % encoder.vocab_size)
 
-# Check how many labels we have (from 0 to 1)
-print(np.unique(train_labels))
+# Let's encode and decode a simple example
+original_string = "Hello TensorFlow."
+encoded_string = encoder.encode(original_string)
+print("Encoded string is %s" % encoded_string)
+print("The original string: %s" % encoder.decode(encoded_string))
 
-# Print one of the reviews
-print(train_data[0])
+for code in encoded_string:
+    print("%s --> %s" % (code, encoder.decode([code])))
 
-# Get the word index dictionary
-word_index = keras.datasets.imdb.get_word_index()
+# Inspect the first 3 examples in the train data set
+for train_example, train_label in train_data.take(3):
+    print("Encoded text: %s" % train_example[:20].numpy())
+    print("Decoded text: %s" % encoder.decode(train_example.numpy()))
+    print("Label: %s" % train_label.numpy())
+    print("\n")
 
-# The first indices are reserved
-word_index = {key : value + 3 for key, value in word_index.items()} 
-word_index["<PAD>"] = 0
-word_index["<START>"] = 1
-word_index["<UNK>"] = 2
-word_index["<UNUSED>"] = 3
+# Prepare the data for training creating batches of 32 reviews
+# with constant length (short reviews will be padded with zeros)
+buffer_size = 1000
+train_batches = (train_data.shuffle(buffer_size).padded_batch(32, train_data.output_shapes))
+test_batches = (test_data.padded_batch(32, train_data.output_shapes))
 
-# Calculate the inverse dictionary
-reverse_word_index = {value: key for key, value in word_index.items()}
+for example_batch, label_batch in train_batches.take(2):
+    print("Batch shape: %s" % example_batch.shape)
+    print("Label shape: %s" % label_batch.shape)
 
-
-# Write a function to decode a review
-def decode_review(text):
-    return ' '.join([reverse_word_index.get(i, '?') for i in text])
-
-
-print(decode_review(train_data[0]))
-
-# Get the maximum review length (2494)
-train_max_length = max([len(review) for review in train_data])
-test_max_length = max([len(review) for review in test_data])
-
-# We will fix the review size to a maximum of 256 words, either
-# padding zeros at the end or cutting the review
-train_data = keras.preprocessing.sequence.pad_sequences(train_data,
-                                                        value=word_index["<PAD>"],
-                                                        padding='post',
-                                                        maxlen=256)
-
-test_data = keras.preprocessing.sequence.pad_sequences(test_data,
-                                                       value=word_index["<PAD>"],
-                                                       padding='post',
-                                                       maxlen=256)
-
-# We can now define the model layers
-vocab_size = 10000
-model = keras.Sequential()
-model.add(keras.layers.Embedding(vocab_size, 16))
-model.add(keras.layers.GlobalAveragePooling1D())
-model.add(keras.layers.Dense(16, activation=tf.nn.relu))
-model.add(keras.layers.Dense(1, activation=tf.nn.sigmoid))
+# Define the model that we are going to use
+model = keras.Sequential([
+    keras.layers.Embedding(encoder.vocab_size, 16),
+    keras.layers.GlobalAveragePooling1D(),
+    # keras.layers.Dense(16, activation=tf.nn.relu),
+    keras.layers.Dense(1, activation=tf.nn.sigmoid)
+])
 
 # Print the model summary
 model.summary()
 
 # Compile the model
-model.compile(optimizer='adam',
-              loss='binary_crossentropy',
-              metrics=['acc'])
+model.compile(optimizer="adam",
+              loss="binary_crossentropy",
+              metrics=["accuracy"])
 
-# Select some data for validation
-x_val = train_data[:10000]
-partial_x_train = train_data[10000:]
-y_val = train_labels[:10000]
-partial_y_train = train_labels[10000:]
+# Train the model using the train batches
+history = model.fit(train_batches,
+                    epochs=10,
+                    validation_data=test_batches,
+                    validation_steps=30)
 
-# Train the model
-history = model.fit(partial_x_train,
-                    partial_y_train,
-                    epochs=40,
-                    batch_size=512,
-                    validation_data=(x_val, y_val),
-                    verbose=1)
+# Plot the training history
+plotUtils.plot_training_history(history)
 
-# Evaluate the model
-results = model.evaluate(test_data, test_labels)
-print(results)
+# Evaluate the model using the test batches
+test_loss, test_accuracy = model.evaluate(test_batches)
+print("Test accuracy:", test_accuracy)
 
-# Plot the accuracy and loss over time
-history_dict = history.history
-epochs = range(1, len(history_dict['acc']) + 1)
-
-plt.figure()
-plt.plot(epochs, history_dict['loss'], 'bo', label='Training loss')
-plt.plot(epochs, history_dict['val_loss'], 'b', label='Validation loss')
-plt.title('Training and validation loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.legend()
-plt.show(block=False)
-
-plt.figure()
-plt.plot(epochs, history_dict['acc'], 'bo', label='Training acc')
-plt.plot(epochs, history_dict['val_acc'], 'b', label='Validation acc')
-plt.title('Training and validation accuracy')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.show(block=False)
+# Predict the labels of the test batches
+predictions = model.predict(test_batches)
+print("Predictions shape:", predictions.shape)

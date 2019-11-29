@@ -46,7 +46,7 @@ data["Japan"] = np.array(origin == 3, dtype=np.float)
 train_data = data.sample(frac=0.8, random_state=0)
 test_data = data.drop(train_data.index)
 
-# Have a quick view to the general trends
+# Have a quick look to the general trends
 sns.pairplot(train_data[["MPG", "Cylinders", "Displacement", "Weight"]], diag_kind="kde")
 plt.show(block=False)
 

@@ -9,10 +9,11 @@ import tensorflow_datasets as tfds
 from utils import plotUtils
 
 # Load the IMDB data set
-(train_data, test_data), info = tfds.load("imdb_reviews/subwords8k",
-                                          split=(tfds.Split.TRAIN, tfds.Split.TEST),
-                                          as_supervised=True,
-                                          with_info=True)
+(train_data, test_data), info = tfds.load(
+    name="imdb_reviews/subwords8k",
+    split=(tfds.Split.TRAIN, tfds.Split.TEST),
+    as_supervised=True,
+    with_info=True)
 
 # Get the text encoder and print the number of words in the vocabulary
 encoder = info.features["text"].encoder
